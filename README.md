@@ -1,7 +1,20 @@
 # Dockerfile From Image (dfimage)
-[![Build Status](https://travis-ci.org/LanikSJ/dfimage.svg?branch=master)](https://travis-ci.org/LanikSJ/dfimage)
-[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=LanikSJ/dfimage)](https://dependabot.com)
-[![Known Vulnerabilities](https://snyk.io/test/github/LanikSJ/dfimage/badge.svg?targetFile=/docs/Gemfile.lock)](https://snyk.io/test/github/LanikSJ/dfimage?targetFile=/docs/Gemfile.lock)
+
+![GitHub Repo Size](https://img.shields.io/github/repo-size/laniksj/dfimage)
+![GitHub Code Size in Bytes](https://img.shields.io/github/languages/code-size/laniksj/dfimage)
+![GitHub Last Commit](https://img.shields.io/github/last-commit/laniksj/dfimage)
+![GitHub Commit Activity](https://img.shields.io/github/commit-activity/m/laniksj/dfimage)
+
+-   [Purpose](#purpose)
+-   [Usage](#usage)
+-   [Docker Example](#docker-example)
+-   [How Does It Work](#how-does-it-work)
+-   [Limitations](#limitations)
+-   [Extract](#extract)
+-   [License](#license)
+-   [Donate](#donate)
+
+## Purpose
 
 Reverse-engineers a Dockerfile from a Docker image.
 
@@ -10,35 +23,40 @@ See my [Inspiration](https://github.com/CenturyLinkLabs/dockerfile-from-image) a
 Similar to how the `docker history` command works, the Python script is able to re-create the Dockerfile ([approximately](#limitations)) that was used to generate an image using the metadata that Docker stores alongside each image layer.
 
 ## Usage
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5bc4537290504435bce6a3e3ed83101b)](https://app.codacy.com/app/LanikSJ/dfimage?utm_source=github.com&utm_medium=referral&utm_content=LanikSJ/dfimage&utm_campaign=Badge_Grade_Dashboard)
-[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/60355d4f69bd426689fa6917fc3b8409)](https://www.codacy.com/app/Lanik/dfimage?utm_source=github.com&utm_medium=referral&utm_content=LanikSJ/dfimage&utm_campaign=Badge_Coverage)
+
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e49393ee816646f28044e4d4f386f5ac)](https://www.codacy.com/gh/LanikSJ/dfimage/dashboard?utm_source=github.com&utm_medium=referral&utm_content=LanikSJ/dfimage&utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/LanikSJ/dfimage/branch/master/graph/badge.svg)](https://codecov.io/gh/LanikSJ/dfimage)
 
 The Python script is itself packaged as a Docker image so it can easily be executed with the Docker _run_ command:
 
-    docker run -v /var/run/docker.sock:/var/run/docker.sock dfimage imageID
+    docker run -v /var/run/docker.sock:/var/run/docker.sock dfimage ruby:latest
 
-The `imageID` parameter is the image ID (either the truncated form or the complete image ID).
+The `ruby:latest` parameter is the image name & tag (either the truncated form or the complete image name & tag).
 
 Since the script interacts with the Docker API in order to query the metadata for the various image layers it needs access to the Docker API socket.  The `-v` flag shown above makes the Docker socket available inside the container running the script.
 
 Note that the script only works against images that exist in your local image repository (the stuff you see when you type `docker images`). If you want to generate a Dockerfile for an image that doesn't exist in your local repo you'll first need to `docker pull` it.
 
 ## Docker Example
-[![Docker Repository on Docker Hub](https://img.shields.io/docker/cloud/automated/laniksj/dfimage.svg?style=flat)](https://hub.docker.com/r/laniksj/dfimage)
-[![Docker Repository on Quay](https://quay.io/repository/laniksj/dfimage/status "Docker Repository on Quay")](https://quay.io/repository/laniksj/dfimage)
-[![Docker Pulls](https://badgen.net/docker/pulls/laniksj/dfimage)](https://hub.docker.com/r/laniksj/dfimage)
-[![Docker Layers](https://images.microbadger.com/badges/image/laniksj/dfimage.svg)](https://microbadger.com/images/laniksj/dfimage "Get your own image badge on microbadger.com")
 
-Here's an example that shows the official Docker ruby image being pulled and the Dockerfile for that image being generated.
+[![Actions Status](https://github.com/LanikSJ/dfimage/workflows/Docker%20Publish/badge.svg)](https://github.com/LanikSJ/dfimage/actions)
 
-    $ docker pull laniksj/dfimage
+Here's an example that shows the official Docker ruby image being pulled and the Dockerfile for that image being generated. Note: A docker tag is required for correct functionality.
+
+    $ docker pull ruby:latest
+    latest: Pulling from library/ruby
+    ...
+    Status: Downloaded newer image for ruby:latest
+
+    $ docker pull ghcr.io/laniksj/dfimage
     Using default tag: latest
     latest: Pulling from dfimage
+    ...
+    Status: Downloaded newer image for dfimage:latest
 
-    $ alias dfimage="docker run -v /var/run/docker.sock:/var/run/docker.sock --rm laniksj/dfimage"
+    $ alias dfimage="docker run -v /var/run/docker.sock:/var/run/docker.sock --rm ghcr.io/laniksj/dfimage"
 
-    $ dfimage imageID
+    $ dfimage ruby:latest
     FROM buildpack-deps:latest
     RUN useradd -g users user
     RUN apt-get update && apt-get install -y bison procps
@@ -59,7 +77,7 @@ Here's an example that shows the official Docker ruby image being pulled and the
     ONBUILD WORKDIR /usr/src/app
     ONBUILD RUN [ ! -e Gemfile ] || bundle install --system
 
-## How Does It Work?
+## How Does It Work
 
 When an image is constructed from a Dockerfile, each instruction in the Dockerfile results in a new layer. You can see all of the image layers by using the `docker images` command with the (now deprecated) `--tree` flag.
 
@@ -91,7 +109,6 @@ When an image is constructed from a Dockerfile, each instruction in the Dockerfi
 
 Each one of these layers is the result of executing an instruction in a Dockerfile. In fact, if you do a `docker inspect` on any one of these layers you can see the instruction that was used to generate that layer.
 
-
     $ docker inspect 011aa33ba92b
     [{
       . . .
@@ -104,9 +121,9 @@ Each one of these layers is the result of executing an instruction in a Dockerfi
         . . .
     }]
 
-The output above has been truncated, but nested within the *ContainerConfig* data you'll find the Dockerfile command that generated this layer (in this case it was an `ONBUILD` instruction).
+The output above has been truncated, but nested within the _ContainerConfig_ data you'll find the Dockerfile command that generated this layer (in this case it was an `ONBUILD` instruction).
 
-The *entrypoint.py* script works by simply walking backward through the layer tree and collecting the commands stored with each layer. When the script reaches the first tagged layer (or the root of the tree) it stops and displays the (reversed) list of commands. If you want to generate the commands going all the way back to the root image layer you can use the `-f` flag to walk the entire tree.
+The _entrypoint.py_ script works by simply walking backward through the layer tree and collecting the commands stored with each layer. When the script reaches the first tagged layer (or the root of the tree) it stops and displays the (reversed) list of commands. If you want to generate the commands going all the way back to the root image layer you can use the `-f` flag to walk the entire tree.
 
 ## Limitations
 
@@ -123,4 +140,9 @@ If you want to extract a file from a container run this:
     docker run --rm --entrypoint cat imageName /path/to/file > filename
 
 ## License
-[![GPLv3 License](https://img.shields.io/badge/License-GPLv3-blue.svg)](http://perso.crans.org/besson/LICENSE.html)
+
+[![MIT License](https://img.shields.io/badge/license-MIT-blue)](https://en.wikipedia.org/wiki/MIT_License)
+
+## Donate
+
+[![Patreon](https://img.shields.io/badge/patreon-donate-red.svg)](https://www.patreon.com/laniksj/overview)

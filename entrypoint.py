@@ -23,13 +23,14 @@ class MainObj:
         for i in self.commands:
             print(i)
 
-    def _get_image(self, img_hash):
+    def _get_image(self, repo_tag):
         images = self.cli.images()
         for i in images:
-            if img_hash in i['Id']:
+            if repo_tag in i['RepoTags']:
                 self.img = i
                 return
-        raise ImageNotFound("Image {} not found\n".format(img_hash))
+        raise ImageNotFound(f'Image {repo_tag} Not Found! '
+                            f'Please Make Sure You Run docker pull {repo_tag} Beforehand.\n')
 
     def _insert_step(self, step):
         if "#(nop)" in step:
